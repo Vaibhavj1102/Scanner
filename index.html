@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            margin: auto;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+        .btn {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">QR Code Scanner</h1>
+    <div id="reader"></div>
+    <p id="result"></p>
+    <button id="visitBtn" class="btn" style="display: none;">Visit URL</button>
+
+    <script>
+        function startScanner() {
+            const html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                function(decodedText) {
+                    document.getElementById('result').innerText = "Scanned QR Code: " + decodedText;
+                    document.getElementById('visitBtn').style.display = "block";
+                    document.getElementById('visitBtn').onclick = function() {
+                        window.location.href = decodedText;
+                    };
+                },
+                function(error) {
+                    console.warn(`QR Code scan failed: ${error}`);
+                }
+            ).catch(err => {
+                console.error("QR Scanner error:", err);
+            });
+        }
+
+        window.onload = function() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(startScanner)
+                    .catch(err => console.error("Camera access denied:", err));
+            } else {
+                console.error("Camera not supported in this browser.");
+            }
+        };
+    </script>
+</body>
+</html>
