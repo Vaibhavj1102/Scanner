@@ -6,183 +6,67 @@
     <title>QR Code Scanner</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-
-body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background-color: #1c1c1c;
-    color: white;
-    text-align: center;
-}
-
-.screen {
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.hidden {
-    display: none;
-}
-
-.centered {
-    text-align: center;
-    max-width: 300px;
-}
-
-.qr-logo {
-    width: 100px;
-    margin-bottom: 20px;
-}
-
-.btn {
-    padding: 12px 20px;
-    background-color: #fbc02d;
-    color: #1c1c1c;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-.scanner-header {
-    width: 100%;
-    padding: 15px 0;
-    background-color: #252525;
-}
-
-#reader {
-    width: 90%;
-    max-width: 400px;
-    margin-top: 20px;
-    border: 4px solid #fbc02d;
-    border-radius: 10px;
-}
-
-.bottom-nav {
-    position: fixed;
-    bottom: 10px;
-    width: 100%;
-    display: flex;
-    justify-content: space-around;
-}
-
-.nav-btn {
-    padding: 10px;
-    background-color: #252525;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-}
-
-.nav-btn.active {
-    background-color: #fbc02d;
-    color: black;
-}
-
-#historyList {
-    width: 90%;
-    max-width: 400px;
-    list-style: none;
-    padding: 0;
-}
-
-#historyList li {
-    background-color: #333;
-    padding: 10px;
-    margin: 5px 0;
-    border-radius: 5px;
-}
-
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            margin: auto;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+        .btn {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <!-- Splash Screen -->
-    <div id="splashScreen" class="screen">
-        <div class="centered">
-            <img src="qr_icon.png" alt="QR Icon" class="qr-logo">
-            <p>Go and enjoy our features for free and make your life easy with us.</p>
-            <button class="btn" onclick="showScanner()">Let's Start</button>
-        </div>
-    </div>
-
-    <!-- Scanner Screen -->
-    <div id="scannerScreen" class="screen hidden">
-        <div class="scanner-header">
-            <h2>Scan QR Code</h2>
-        </div>
-        <div id="reader"></div>
-        <p id="result"></p>
-        <div class="bottom-nav">
-            <button class="nav-btn" onclick="showScanner()">Scan</button>
-            <button class="nav-btn" onclick="showHistory()">History</button>
-        </div>
-    </div>
-
-    <!-- History Screen -->
-    <div id="historyScreen" class="screen hidden">
-        <div class="scanner-header">
-            <h2>History</h2>
-        </div>
-        <ul id="historyList"></ul>
-        <div class="bottom-nav">
-            <button class="nav-btn" onclick="showScanner()">Scan</button>
-            <button class="nav-btn active">History</button>
-        </div>
-    </div>
+    <h1 style="text-align: center;">QR Code Scanner</h1>
+    <div id="reader"></div>
+    <p id="result"></p>
+    <button id="visitBtn" class="btn" style="display: none;">Visit URL</button>
 
     <script>
-        function showScanner() {
-    document.getElementById("splashScreen").classList.add("hidden");
-    document.getElementById("scannerScreen").classList.remove("hidden");
-    document.getElementById("historyScreen").classList.add("hidden");
-    startScanner();
-}
+        function startScanner() {
+            const html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-function showHistory() {
-    document.getElementById("splashScreen").classList.add("hidden");
-    document.getElementById("scannerScreen").classList.add("hidden");
-    document.getElementById("historyScreen").classList.remove("hidden");
-    loadHistory();
-}
-
-function startScanner() {
-    const html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        function(decodedText) {
-            document.getElementById('result').innerText = "Scanned QR Code: " + decodedText;
-            saveToHistory(decodedText);
-        },
-        function(error) {
-            console.warn("Scan failed: ", error);
+            html5QrCode.start(
+                { facingMode: "environment" },
+                config,
+                function(decodedText) {
+                    document.getElementById('result').innerText = "Scanned QR Code: " + decodedText;
+                    document.getElementById('visitBtn').style.display = "block";
+                    document.getElementById('visitBtn').onclick = function() {
+                        window.location.href = decodedText;
+                    };
+                },
+                function(error) {
+                    console.warn(`QR Code scan failed: ${error}`);
+                }
+            ).catch(err => {
+                console.error("QR Scanner error:", err);
+            });
         }
-    ).catch(err => console.error("QR Scanner error:", err));
-}
 
-function saveToHistory(text) {
-    let history = JSON.parse(localStorage.getItem("qrHistory")) || [];
-    history.unshift(text);
-    localStorage.setItem("qrHistory", JSON.stringify(history));
-}
-
-function loadHistory() {
-    let history = JSON.parse(localStorage.getItem("qrHistory")) || [];
-    let historyList = document.getElementById("historyList");
-    historyList.innerHTML = "";
-    history.forEach(item => {
-        let li = document.createElement("li");
-        li.textContent = item;
-        historyList.appendChild(li);
-    });
-}
-
-
+        window.onload = function() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(startScanner)
+                    .catch(err => console.error("Camera access denied:", err));
+            } else {
+                console.error("Camera not supported in this browser.");
+            }
+        };
     </script>
 </body>
 </html>
