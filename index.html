@@ -135,6 +135,8 @@
     </div>
 
     <script>
+        let scannedHistory = new Set(); // Stores unique scanned URLs
+
         function showScanner() {
             document.getElementById("scannerPage").style.display = "flex";
             document.getElementById("historyPage").style.display = "none";
@@ -175,11 +177,14 @@
         }
 
         function saveToHistory(qrText) {
-            let historyList = document.getElementById("historyList");
-            let newItem = document.createElement("div");
-            newItem.className = "history-item";
-            newItem.innerHTML = `<a href="${qrText}" target="_blank">${qrText}</a> <span>🗑️</span>`;
-            historyList.appendChild(newItem);
+            if (!scannedHistory.has(qrText)) { // Add only if not already in history
+                scannedHistory.add(qrText);
+                let historyList = document.getElementById("historyList");
+                let newItem = document.createElement("div");
+                newItem.className = "history-item";
+                newItem.innerHTML = `<a href="${qrText}" target="_blank">${qrText}</a> <span>🗑️</span>`;
+                historyList.appendChild(newItem);
+            }
         }
 
         // Start scanner on page load
