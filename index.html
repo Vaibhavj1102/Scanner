@@ -6,36 +6,149 @@
     <title>QR Code Scanner</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        #reader {
-            width: 100%;
-            max-width: 400px;
-            margin: auto;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
         }
-        #result {
-            margin-top: 20px;
-            font-size: 18px;
+
+        body {
+            background-color: #222;
+            color: white;
             text-align: center;
         }
-        .btn {
-            display: block;
-            margin: 10px auto;
-            padding: 10px 15px;
-            background-color: #007bff;
+
+        /* QR Scanner */
+        .scanner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #reader {
+            width: 300px;
+            border: 2px solid #fdb515;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .result-container {
+            margin-top: 20px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .visit-btn {
+            background: #fdb515;
             color: white;
+            padding: 10px 20px;
             border: none;
             border-radius: 5px;
+            font-size: 16px;
             cursor: pointer;
-            text-align: center;
+        }
+
+        .visit-btn:hover {
+            background: #ffcc33;
+        }
+
+        /* History Page */
+        .history-container {
+            display: none;
+            height: 100vh;
+            background: #222;
+            color: white;
+            padding: 20px;
+        }
+
+        .history-title {
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #333;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+
+        .history-item a {
+            color: #fdb515;
+            text-decoration: none;
+        }
+
+        /* Navigation Bar */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #222;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+        }
+
+        .nav-item {
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .active {
+            color: #fdb515;
         }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center;">QR Code Scanner</h1>
-    <div id="reader"></div>
-    <p id="result"></p>
-    <button id="visitBtn" class="btn" style="display: none;">Visit URL</button>
+
+    <!-- QR Scanner (Default Page) -->
+    <div class="scanner-container" id="scannerPage">
+        <h1>Scan QR Code</h1>
+        <div id="reader"></div>
+
+        <!-- Scanned Result -->
+        <div class="result-container" id="resultContainer">
+            <p id="result"></p>
+            <button class="visit-btn" id="visitBtn">Visit</button>
+        </div>
+    </div>
+
+    <!-- History Page -->
+    <div class="history-container" id="historyPage">
+        <h1 class="history-title">History</h1>
+        <div id="historyList"></div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="showScanner()">📷 Scan</div>
+        <div class="nav-item" onclick="showHistory()">📜 History</div>
+    </div>
 
     <script>
+        function showScanner() {
+            document.getElementById("scannerPage").style.display = "flex";
+            document.getElementById("historyPage").style.display = "none";
+            document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+            event.target.classList.add("active");
+        }
+
+        function showHistory() {
+            document.getElementById("scannerPage").style.display = "none";
+            document.getElementById("historyPage").style.display = "block";
+            document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+            event.target.classList.add("active");
+        }
+
         function startScanner() {
             const html5QrCode = new Html5Qrcode("reader");
             const config = { fps: 10, qrbox: { width: 250, height: 250 } };
@@ -44,29 +157,34 @@
                 { facingMode: "environment" },
                 config,
                 function(decodedText) {
-                    document.getElementById('result').innerText = "Scanned QR Code: " + decodedText;
-                    document.getElementById('visitBtn').style.display = "block";
-                    document.getElementById('visitBtn').onclick = function() {
-                        window.location.href = decodedText;
-                    };
+                    showResult(decodedText);
+                    saveToHistory(decodedText);
                 },
                 function(error) {
                     console.warn(`QR Code scan failed: ${error}`);
                 }
-            ).catch(err => {
-                console.error("QR Scanner error:", err);
-            });
+            ).catch(err => console.error("QR Scanner error:", err));
         }
 
-        window.onload = function() {
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(startScanner)
-                    .catch(err => console.error("Camera access denied:", err));
-            } else {
-                console.error("Camera not supported in this browser.");
-            }
-        };
+        function showResult(qrText) {
+            document.getElementById("result").innerText = qrText;
+            document.getElementById("visitBtn").onclick = function() {
+                window.location.href = qrText;
+            };
+            document.getElementById("resultContainer").style.display = "flex";
+        }
+
+        function saveToHistory(qrText) {
+            let historyList = document.getElementById("historyList");
+            let newItem = document.createElement("div");
+            newItem.className = "history-item";
+            newItem.innerHTML = `<a href="${qrText}" target="_blank">${qrText}</a> <span>🗑️</span>`;
+            historyList.appendChild(newItem);
+        }
+
+        // Start scanner on page load
+        window.onload = startScanner;
     </script>
+
 </body>
 </html>
